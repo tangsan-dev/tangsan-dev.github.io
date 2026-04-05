@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kuis Matematika</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a1a2e;
+      font-family: Arial, sans-serif;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    h1 { color: #e94560; margin-bottom: 5px; font-size: 1.8rem; }
+    .subtitle { color: #a8b2d8; margin-bottom: 20px; font-size: 0.9rem; }
+    .info {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .info span { color: #a8b2d8; font-size: 0.95rem; }
+    .info b { color: #e94560; }
+    .progress-bar {
+      width: 100%;
+      max-width: 400px;
+      height: 8px;
+      background: #0f3460;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .progress {
+      height: 8px;
+      background: #e94560;
+      border-radius: 10px;
+      transition: width 0.3s;
+    }
+    .card {
+      background: #16213e;
+      border-radius: 15px;
+      padding: 25px;
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 20px;
+    }
+    .nomor { color: #a8b2d8; font-size: 0.85rem; margin-bottom: 10px; }
+    .soal { font-size: 1.3rem; font-weight: bold; margin-bottom: 20px; line-height: 1.5; }
+    .pilihan {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .pilihan button {
+      padding: 12px 15px;
+      border: 2px solid #0f3460;
+      border-radius: 10px;
+      background: #0f3460;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+    }
+    .pilihan button:hover { border-color: #e94560; }
+    .pilihan button.benar { background: #00cc66; border-color: #00cc66; }
+    .pilihan button.salah { background: #e94560; border-color: #e94560; }
+    .pilihan button.tampil-benar { background: #00cc66; border-color: #00cc66; }
+    .feedback {
+      font-size: 1rem;
+      margin-bottom: 15px;
+      min-height: 24px;
+      font-weight: bold;
+    }
+    .feedback.benar { color: #00cc66; }
+    .feedback.salah { color: #e94560; }
+    #nextBtn {
+      padding: 12px 35px;
+      background: #e94560;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      font-size: 1rem;
+      cursor: pointer;
+      display: none;
+    }
+    .hasil {
+      text-align: center;
+      display: none;
+    }
+    .hasil h2 { font-size: 2rem; color: #e94560; margin-bottom: 10px; }
+    .nilai {
+      font-size: 4rem;
+      font-weight: bold;
+      color: #00cc66;
+      margin: 15px 0;
+    }
+    .hasil p { color: #a8b2d8; margin-bottom: 20px; }
+    #ulangBtn {
+      padding: 12px 35px;
+      background: #e94560;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>📐 Kuis Matematika</h1>
+  <p class="subtitle">Uji kemampuan matematika kamu!</p>
+
+  <div class="info">
+    <span>Soal: <b id="nomorSoal">1</b>/10</span>
+    <span>Skor: <b id="skor">0</b></span>
+    <span>⏱ <b id="timer">15</b>s</span>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress" id="progress" style="width:10%"></div>
+  </div>
+
+  <div class="card" id="kuisCard">
+    <div class="nomor" id="nomor">Soal 1 dari 10</div>
+    <div class="soal" id="soal"></div>
+    <div class="pilihan" id="pilihan"></div>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+  <button id="nextBtn" onclick="nextSoal()">Soal Berikutnya ➡</button>
+
+  <div class="hasil" id="hasil">
+    <h2>🎉 Selesai!</h2>
+    <div class="nilai" id="nilai"></div>
+    <p id="keterangan"></p>
+    <button id="ulangBtn" onclick="mulaiKuis()">🔄 Ulangi Kuis</button>
+  </div>
+
+  <script>
+    const soalList = [
+      { soal: "Berapa hasil dari 15 × 8?", pilihan: ["100", "120", "110", "130"], jawaban: 1 },
+      { soal: "Jika x + 7 = 15, maka x = ?", pilihan: ["6", "7", "8", "9"], jawaban: 2 },
+      { soal: "Berapa luas persegi dengan sisi 9 cm?", pilihan: ["72 cm²", "81 cm²", "36 cm²", "45 cm²"], jawaban: 1 },
+      { soal: "Berapa hasil dari 144 ÷ 12?", pilihan: ["11", "13", "12", "14"], jawaban: 2 },
+      { soal: "Berapa nilai dari 2³ + 3²?", pilihan: ["15", "16", "17", "18"], jawaban: 2 },
+      { soal: "Keliling lingkaran dengan jari-jari 7 cm adalah? (π = 22/7)", pilihan: ["42 cm", "44 cm", "46 cm", "48 cm"], jawaban: 1 },
+      { soal: "Berapa FPB dari 24 dan 36?", pilihan: ["6", "8", "12", "18"], jawaban: 2 },
+      { soal: "Jika 3y - 6 = 12, maka y = ?", pilihan: ["4", "5", "6", "7"], jawaban: 2 },
+      { soal: "Berapa hasil dari √169?", pilihan: ["11", "12", "13", "14"], jawaban: 2 },
+      { soal: "Volume kubus dengan sisi 5 cm adalah?", pilihan: ["75 cm³", "100 cm³", "125 cm³", "150 cm³"], jawaban: 2 }
+    ];
+
+    let currentSoal = 0;
+    let skor = 0;
+    let terjawab = false;
+    let timerInterval;
+    let timeLeft = 15;
+
+    function mulaiKuis() {
+      currentSoal = 0;
+      skor = 0;
+      terjawab = false;
+      document.getElementById('hasil').style.display = 'none';
+      document.getElementById('kuisCard').style.display = 'block';
+      document.getElementById('nextBtn').style.display = 'none';
+      document.getElementById('feedback').textContent = '';
+      tampilSoal();
+    }
+
+    function tampilSoal() {
+      const s = soalList[currentSoal];
+      document.getElementById('nomorSoal').textContent = currentSoal + 1;
+      document.getElementById('skor').textContent = skor;
+      document.getElementById('nomor').textContent = `Soal ${currentSoal + 1} dari 10`;
+      document.getElementById('soal').textContent = s.soal;
+      document.getElementById('progress').style.width = ((currentSoal + 1) / 10 * 100) + '%';
+      document.getElementById('feedback').textContent = '';
+      document.getElementById('nextBtn').style.display = 'none';
+      terjawab = false;
+
+      const pilihanDiv = document.getElementById('pilihan');
+      pilihanDiv.innerHTML = '';
+      s.pilihan.forEach((p, i) => {
+        const btn = document.createElement('button');
+        btn.textContent = `${String.fromCharCode(65+i)}. ${p}`;
+        btn.onclick = () => jawab(i, btn);
+        pilihanDiv.appendChild(btn);
+      });
+
+      startTimer();
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      timeLeft = 15;
+      document.getElementById('timer').textContent = timeLeft;
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer').textContent = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          if (!terjawab) {
+            terjawab = true;
+            tampilJawaban(-1);
+          }
+        }
+      }, 1000);
+    }
+
+    function jawab(index, btn) {
+      if (terjawab) return;
+      terjawab = true;
+      clearInterval(timerInterval);
+      tampilJawaban(index);
+    }
+
+    function tampilJawaban(index) {
+      const s = soalList[currentSoal];
+      const btns = document.querySelectorAll('.pilihan button');
+      const feedback = document.getElementById('feedback');
+
+      btns.forEach((b, i) => {
+        b.disabled = true;
+        if (i === s.jawaban) b.classList.add('tampil-benar');
+      });
+
+      if (index === s.jawaban) {
+        skor += 10;
+        document.getElementById('skor').textContent = skor;
+        feedback.textContent = '✅ Benar! +10 poin';
+        feedback.className = 'feedback benar';
+        if (index >= 0) btns[index].classList.add('benar');
+      } else if (index === -1) {
+        feedback.textContent = '⏰ Waktu habis!';
+        feedback.className = 'feedback salah';
+      } else {
+        feedback.textContent = '❌ Salah!';
+        feedback.className = 'feedback salah';
+        btns[index].classList.add('salah');
+      }
+
+      document.getElementById('nextBtn').style.display = 'block';
+      document.getElementById('nextBtn').textContent =
+        currentSoal < 9 ? 'Soal Berikutnya ➡' : 'Lihat Hasil 🎯';
+    }
+
+    function nextSoal() {
+      currentSoal++;
+      if (currentSoal >= 10) {
+        tampilHasil();
+      } else {
+        tampilSoal();
+      }
+    }
+
+    function tampilHasil() {
+      clearInterval(timerInterval);
+      document.getElementById('kuisCard').style.display = 'none';
+      document.getElementById('nextBtn').style.display = 'none';
+      document.getElementById('feedback').textContent = '';
+      document.getElementById('hasil').style.display = 'block';
+      document.getElementById('nilai').textContent = skor + '/100';
+
+      let ket = '';
+      if (skor >= 80) ket = '🌟 Luar biasa! Kamu sangat pintar!';
+      else if (skor >= 60) ket = '👍 Bagus! Terus tingkatkan!';
+      else if (skor >= 40) ket = '📚 Lumayan! Rajin belajar ya!';
+      else ket = '💪 Jangan menyerah! Coba lagi!';
+      document.getElementById('keterangan').textContent = ket;
+    }
+
+    mulaiKuis();
+  </script>
+</body>
+  </html>

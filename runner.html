@@ -1,4 +1,4 @@
-runner.htmlDOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
@@ -6,620 +6,388 @@ runner.htmlDOCTYPE html>
   <title>Endless Runner</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #1a1a2e; font-family: Arial, sans-serif; overflow: hidden; }
-    canvas { display: block; }
+    body { background: #000; overflow: hidden; font-family: Arial, sans-serif; }
+    canvas { display: block; position: fixed; top: 0; left: 0; z-index: 1; }
+    #ui {
+      position: fixed; top: 0; left: 0; right: 0;
+      padding: 10px 15px; color: white; font-size: 16px;
+      display: flex; justify-content: space-between;
+      z-index: 5; pointer-events: none;
+    }
     #overlay {
       position: fixed; inset: 0;
       background: rgba(0,0,20,0.95);
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      color: white; z-index: 20; text-align: center; padding: 20px;
+      color: white; z-index: 50;
+      text-align: center; padding: 20px;
     }
     #overlay h1 { color: #e94560; font-size: 2rem; margin-bottom: 8px; }
     #overlay p { color: #a8b2d8; margin: 4px 0; font-size: 0.9rem; }
     .big-score { font-size: 2.5rem; font-weight: bold; color: #00ff88; margin: 10px 0; display: none; }
-    .btn {
-      padding: 13px 35px; background: #e94560;
-      color: white; border: none; border-radius: 30px;
-      font-size: 1.1rem; cursor: pointer; margin: 6px;
-    }
-    .btn-shop {
-      padding: 13px 35px; background: #0f3460;
-      color: white; border: 2px solid #4488ff; border-radius: 30px;
-      font-size: 1.1rem; cursor: pointer; margin: 6px;
-    }
+    .btn { padding: 15px 35px; background: #e94560; color: white; border: none; border-radius: 30px; font-size: 1.1rem; cursor: pointer; margin: 6px; -webkit-tap-highlight-color: transparent; }
+    .btn-shop { padding: 15px 35px; background: #0f3460; color: white; border: 2px solid #4488ff; border-radius: 30px; font-size: 1.1rem; cursor: pointer; margin: 6px; -webkit-tap-highlight-color: transparent; }
     #shop {
       position: fixed; inset: 0;
       background: rgba(0,0,20,0.97);
       display: none; flex-direction: column;
-      align-items: center; z-index: 25;
+      align-items: center; z-index: 60;
       color: white; padding: 20px; overflow-y: auto;
     }
-    #shop h2 { color: #e94560; font-size: 1.6rem; margin-bottom: 5px; }
-    .coin-display { color: #ffcc00; font-size: 1.1rem; margin-bottom: 15px; }
-    .char-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; width: 100%; max-width: 400px; }
-    .char-card {
-      background: #16213e; border-radius: 12px;
-      padding: 12px; width: 140px; text-align: center;
-      border: 2px solid #0f3460; cursor: pointer;
-    }
+    #shop h2 { color: #e94560; font-size: 1.6rem; margin: 10px 0 5px; }
+    .char-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; width: 100%; max-width: 400px; margin: 10px 0; }
+    .char-card { background: #16213e; border-radius: 12px; padding: 12px; width: 140px; text-align: center; border: 2px solid #0f3460; cursor: pointer; }
     .char-card.owned { border-color: #00cc66; }
     .char-card.selected { border-color: #e94560; }
-    .char-preview { width: 60px; height: 80px; margin: 0 auto 8px; }
-    .char-name { font-size: 0.9rem; font-weight: bold; margin-bottom: 4px; }
+    .char-name { font-size: 0.9rem; font-weight: bold; margin: 5px 0 3px; }
     .char-price { color: #ffcc00; font-size: 0.85rem; }
     .char-status { font-size: 0.8rem; margin-top: 4px; }
-    #closeShop {
-      margin-top: 15px; padding: 12px 30px;
-      background: #333; color: white; border: none;
-      border-radius: 25px; font-size: 1rem; cursor: pointer;
-    }
+    #closeShop { margin: 10px; padding: 12px 30px; background: #333; color: white; border: none; border-radius: 25px; font-size: 1rem; cursor: pointer; }
     #jumpBtn {
       position: fixed; bottom: 20px; left: 50%;
       transform: translateX(-50%);
-      width: 120px; height: 120px;
+      width: 110px; height: 110px;
       background: rgba(233,69,96,0.3);
       border: 3px solid #e94560; border-radius: 50%;
       color: white; font-size: 2.5rem;
-      display: flex; align-items: center; justify-content: center;
+      display: none; align-items: center; justify-content: center;
       cursor: pointer; user-select: none; z-index: 10;
+      -webkit-tap-highlight-color: transparent;
     }
   </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="ui">
+  <span>⭐ <b id="scoreUI">0</b></span>
+  <span style="color:#ffcc00">🪙 <b id="coinUI">0</b></span>
+  <span>🏆 <b id="bestUI">0</b></span>
+</div>
 <div id="jumpBtn">⬆</div>
 
 <div id="overlay">
   <h1>🏃 Endless Runner</h1>
   <p>Tap ⬆ atau layar untuk lompat!</p>
-  <p style="font-size:0.8rem;color:#555">Kumpulkan 🪙 untuk beli karakter baru!</p>
+  <p style="font-size:0.8rem;color:#555">Kumpulkan 🪙 untuk beli karakter!</p>
   <div class="big-score" id="deadScore"></div>
-  <div style="margin-top:5px;color:#ffcc00" id="coinDisplay">🪙 0</div>
-  <div style="display:flex;flex-wrap:wrap;justify-content:center">
+  <div style="margin:8px 0;color:#ffcc00;font-size:1rem" id="coinDisplay">🪙 0</div>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;margin-top:10px">
     <button class="btn" id="playBtn">▶ Mulai</button>
-    <button class="btn-shop" onclick="openShop()">🛍 Toko</button>
+    <button class="btn-shop" id="shopBtn">🛍 Toko</button>
   </div>
 </div>
 
 <div id="shop">
   <h2>🛍 Toko Karakter</h2>
-  <div class="coin-display" id="shopCoins">🪙 0</div>
+  <div style="color:#ffcc00;margin-bottom:10px" id="shopCoins">🪙 0</div>
   <div class="char-grid" id="charGrid"></div>
-  <button id="closeShop" onclick="closeShop()">✕ Tutup</button>
+  <button id="closeShop">✕ Tutup</button>
 </div>
 
 <script>
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-const W = canvas.width, H = canvas.height;
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+c.width = window.innerWidth;
+c.height = window.innerHeight;
+const W = c.width, H = c.height;
 const GND = H * 0.75;
 
-// Characters
 const CHARS = [
-  { id:0, name:'Runner', price:0, color:'#4488ff', skinColor:'#ffcc99', hairColor:'#333', desc:'Karakter awal' },
-  { id:1, name:'Ninja', price:50, color:'#222', skinColor:'#cc8855', hairColor:'#111', desc:'Cepat & lincah' },
-  { id:2, name:'Astronot', price:100, color:'#cccccc', skinColor:'#ffddbb', hairColor:'#ffffff', desc:'Dari luar angkasa' },
-  { id:3, name:'Warrior', price:200, color:'#cc4400', skinColor:'#ffaa77', hairColor:'#8B4513', desc:'Pejuang kuat' },
-  { id:4, name:'Robot', price:350, color:'#888', skinColor:'#aaaaaa', hairColor:'#666', desc:'Mesin tak kenal lelah' },
-  { id:5, name:'Dragon', price:500, color:'#cc0000', skinColor:'#ff4400', hairColor:'#ff8800', desc:'Legenda berlari' },
+  {id:0,name:'Runner',price:0,col:'#4488ff',skin:'#ffcc99',hair:'#333'},
+  {id:1,name:'Ninja',price:50,col:'#222',skin:'#cc8855',hair:'#111'},
+  {id:2,name:'Astronot',price:100,col:'#ccc',skin:'#ffddbb',hair:'#fff'},
+  {id:3,name:'Warrior',price:200,col:'#cc4400',skin:'#ffaa77',hair:'#8B4513'},
+  {id:4,name:'Robot',price:350,col:'#888',skin:'#aaa',hair:'#666'},
+  {id:5,name:'Dragon',price:500,col:'#cc0000',skin:'#ff4400',hair:'#ff8800'},
 ];
 
-// Save data
 let coins = +localStorage.getItem('rc_coins')||0;
 let owned = JSON.parse(localStorage.getItem('rc_owned')||'[0]');
-let selectedChar = +localStorage.getItem('rc_char')||0;
+let selChar = +localStorage.getItem('rc_char')||0;
 let best = +localStorage.getItem('rc_best')||0;
 
 function save() {
   localStorage.setItem('rc_coins', coins);
   localStorage.setItem('rc_owned', JSON.stringify(owned));
-  localStorage.setItem('rc_char', selectedChar);
+  localStorage.setItem('rc_char', selChar);
   localStorage.setItem('rc_best', best);
 }
 
-// Game state
-let P, obstacles, coins_arr, particles, clouds;
-let score, running, raf, speed, frame, dist;
-let jumping, jumpV, onGround;
-let legAnim = 0;
+let P, obs, coinArr, parts, clouds;
+let score, running, raf, spd, frame, dist;
+let jumpV, onGround, legA;
 
-function initGame() {
+function updateUI() {
+  document.getElementById('scoreUI').textContent = Math.floor(score||0);
+  document.getElementById('coinUI').textContent = coins;
+  document.getElementById('bestUI').textContent = best;
+  document.getElementById('coinDisplay').textContent = '🪙 ' + coins;
+}
+
+function startGame() {
   document.getElementById('overlay').style.display = 'none';
-  const ch = CHARS[selectedChar];
-  P = { x: W*0.18, y: GND, w: 28, h: 52, ch };
-  obstacles = []; coins_arr = []; particles = [];
-  score = 0; speed = 5; frame = 0; dist = 0;
-  jumping = false; jumpV = 0; onGround = true;
-  legAnim = 0;
+  document.getElementById('jumpBtn').style.display = 'flex';
+  const ch = CHARS[selChar];
+  P = {x:W*0.18, y:GND, ch};
+  obs=[]; coinArr=[]; parts=[];
+  score=0; spd=5; frame=0; dist=0;
+  jumpV=0; onGround=true; legA=0;
   clouds = Array(5).fill(0).map((_,i)=>({
-    x: W*0.2 + i*(W/5), y: H*0.1 + Math.random()*H*0.2,
-    w: 60+Math.random()*80, spd: 1+Math.random()
+    x:W*0.2+i*(W/5), y:H*0.1+Math.random()*H*0.15,
+    w:60+Math.random()*80, spd:0.8+Math.random()
   }));
-  running = true;
+  running=true;
   if(raf) cancelAnimationFrame(raf);
   loop();
 }
 
-document.getElementById('playBtn').onclick = initGame;
+function doJump() {
+  if(onGround) { onGround=false; jumpV=-18; }
+}
 
-function jump() {
-  if(onGround) {
-    jumping = true; onGround = false;
-    jumpV = -18;
+function drawBG() {
+  const sky = ctx.createLinearGradient(0,0,0,GND);
+  sky.addColorStop(0,'#050510');
+  sky.addColorStop(1,'#0a1a30');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,GND);
+  ctx.fillStyle='#fffde7';
+  ctx.beginPath(); ctx.arc(W*0.85,H*0.08,22,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#e8e4a0';
+  ctx.beginPath(); ctx.arc(W*0.85+7,H*0.08-4,16,0,Math.PI*2); ctx.fill();
+  for(let i=0;i<15;i++){
+    ctx.fillStyle=`rgba(255,255,255,${0.3+Math.random()*0.5})`;
+    ctx.beginPath(); ctx.arc(i*50+10,(i%4)*35+15,1,0,Math.PI*2); ctx.fill();
+  }
+  clouds.forEach(cl=>{
+    cl.x-=cl.spd*0.4; if(cl.x+cl.w<0) cl.x=W+cl.w;
+    ctx.fillStyle='rgba(255,255,255,0.07)';
+    ctx.beginPath(); ctx.ellipse(cl.x,cl.y,cl.w/2,14,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cl.x-18,cl.y+4,cl.w/3,11,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cl.x+22,cl.y+4,cl.w/3.5,10,0,0,Math.PI*2); ctx.fill();
+  });
+  ctx.fillStyle='#1a2a3a';
+  ctx.beginPath(); ctx.moveTo(0,GND);
+  [0,70,150,240,320,410,500,600,700,W].forEach((mx,i)=>{
+    ctx.lineTo(mx, i%2===0?GND-55:GND-95);
+  });
+  ctx.lineTo(W,GND); ctx.closePath(); ctx.fill();
+  const grd=ctx.createLinearGradient(0,GND,0,H);
+  grd.addColorStop(0,'#2d5a1b'); grd.addColorStop(0.1,'#3d7a25'); grd.addColorStop(1,'#1a3a0a');
+  ctx.fillStyle=grd; ctx.fillRect(0,GND,W,H-GND);
+  ctx.strokeStyle='#4a9a2a'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(0,GND); ctx.lineTo(W,GND); ctx.stroke();
+  ctx.fillStyle='#4a9a2a';
+  for(let i=0;i<8;i++){
+    const gx=((dist*2+i*120)%(W+20))-10;
+    ctx.fillRect(gx,GND+5,35+i*4,3);
   }
 }
 
-// Draw human character
-function drawHuman(x, y, ch, leg) {
-  const c = ch.color, s = ch.skinColor, h = ch.hairColor;
-  const cx = x, cy = y; // cy = bottom of character
-
-  // Shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.2)';
-  ctx.beginPath();
-  ctx.ellipse(cx, cy+2, 18, 5, 0, 0, Math.PI*2);
-  ctx.fill();
-
-  // Legs
-  const legSwing = Math.sin(leg) * 15;
-  // Left leg
-  ctx.strokeStyle = c; ctx.lineWidth = 7;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(cx-5, cy-18);
-  ctx.lineTo(cx-8+legSwing, cy);
-  ctx.stroke();
-  // Right leg
-  ctx.beginPath();
-  ctx.moveTo(cx+5, cy-18);
-  ctx.lineTo(cx+8-legSwing, cy);
-  ctx.stroke();
-
-  // Shoes
-  ctx.fillStyle = '#333';
-  ctx.beginPath(); ctx.ellipse(cx-8+legSwing, cy, 9, 5, 0.2, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(cx+8-legSwing, cy, 9, 5, -0.2, 0, Math.PI*2); ctx.fill();
-
-  // Body
-  const bodyG = ctx.createLinearGradient(cx-12, cy-45, cx+12, cy-18);
-  bodyG.addColorStop(0, lightenColor(c, 40));
-  bodyG.addColorStop(1, c);
-  ctx.fillStyle = bodyG;
-  ctx.beginPath();
-  ctx.roundRect(cx-12, cy-45, 24, 27, 5);
-  ctx.fill();
-
-  // Arms
-  const armSwing = Math.cos(leg) * 20;
-  ctx.strokeStyle = c; ctx.lineWidth = 6;
-  ctx.beginPath();
-  ctx.moveTo(cx-10, cy-40);
-  ctx.lineTo(cx-18, cy-28+armSwing);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(cx+10, cy-40);
-  ctx.lineTo(cx+18, cy-28-armSwing);
-  ctx.stroke();
-
-  // Hands
-  ctx.fillStyle = s;
-  ctx.beginPath(); ctx.arc(cx-18, cy-28+armSwing, 5, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(cx+18, cy-28-armSwing, 5, 0, Math.PI*2); ctx.fill();
-
-  // Neck
-  ctx.fillStyle = s;
-  ctx.fillRect(cx-5, cy-52, 10, 10);
-
-  // Head
-  ctx.fillStyle = s;
-  ctx.beginPath(); ctx.arc(cx, cy-60, 14, 0, Math.PI*2); ctx.fill();
-
-  // Hair / helmet
-  if(ch.id === 2) {
-    // Astronot helmet
-    ctx.strokeStyle = '#aaaaaa'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(cx, cy-60, 17, 0, Math.PI*2); ctx.stroke();
-    ctx.fillStyle = 'rgba(100,200,255,0.3)';
-    ctx.beginPath(); ctx.arc(cx, cy-60, 17, 0, Math.PI*2); ctx.fill();
-  } else if(ch.id === 4) {
-    // Robot head
-    ctx.fillStyle = '#888';
-    ctx.fillRect(cx-14, cy-75, 28, 22);
-    ctx.fillStyle = '#00ffff';
-    ctx.fillRect(cx-8, cy-68, 7, 7);
-    ctx.fillRect(cx+1, cy-68, 7, 7);
+function drawChar(x,y,ch,leg) {
+  const legS=Math.sin(leg)*14;
+  ctx.strokeStyle=ch.col; ctx.lineWidth=7; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(x-5,y-18); ctx.lineTo(x-8+legS,y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x+5,y-18); ctx.lineTo(x+8-legS,y); ctx.stroke();
+  ctx.fillStyle='#222';
+  ctx.beginPath(); ctx.ellipse(x-8+legS,y,8,4,0.2,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x+8-legS,y,8,4,-0.2,0,Math.PI*2); ctx.fill();
+  const bg=ctx.createLinearGradient(x-12,y-45,x+12,y-18);
+  bg.addColorStop(0,ch.col+'dd'); bg.addColorStop(1,ch.col);
+  ctx.fillStyle=bg;
+  ctx.beginPath(); ctx.roundRect(x-12,y-45,24,27,5); ctx.fill();
+  const armS=Math.cos(leg)*18;
+  ctx.strokeStyle=ch.col; ctx.lineWidth=6;
+  ctx.beginPath(); ctx.moveTo(x-10,y-40); ctx.lineTo(x-17,y-28+armS); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x+10,y-40); ctx.lineTo(x+17,y-28-armS); ctx.stroke();
+  ctx.fillStyle=ch.skin;
+  ctx.beginPath(); ctx.arc(x-17,y-28+armS,5,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+17,y-28-armS,5,0,Math.PI*2); ctx.fill();
+  ctx.fillRect(x-5,y-52,10,10);
+  ctx.beginPath(); ctx.arc(x,y-60,14,0,Math.PI*2); ctx.fill();
+  if(ch.id===4){
+    ctx.fillStyle='#777'; ctx.fillRect(x-14,y-75,28,22);
+    ctx.fillStyle='#0ff'; ctx.fillRect(x-8,y-68,7,7); ctx.fillRect(x+1,y-68,7,7);
+  } else if(ch.id===2){
+    ctx.strokeStyle='#bbb'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(x,y-60,17,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle='rgba(100,200,255,0.25)';
+    ctx.beginPath(); ctx.arc(x,y-60,17,0,Math.PI*2); ctx.fill();
   } else {
-    // Hair
-    ctx.fillStyle = h;
-    ctx.beginPath();
-    ctx.arc(cx, cy-60, 14, Math.PI, 0);
-    ctx.fill();
-    if(ch.id === 0) {
-      // Spiky hair
-      ctx.beginPath(); ctx.moveTo(cx-8, cy-72); ctx.lineTo(cx-4, cy-80); ctx.lineTo(cx, cy-73); ctx.lineTo(cx+4, cy-80); ctx.lineTo(cx+8, cy-72); ctx.fill();
-    } else if(ch.id === 1) {
-      // Ninja headband
-      ctx.fillStyle = '#cc0000';
-      ctx.fillRect(cx-15, cy-66, 30, 7);
-    } else if(ch.id === 3) {
-      // Warrior helmet
-      ctx.fillStyle = '#cc4400';
-      ctx.beginPath(); ctx.arc(cx, cy-62, 16, Math.PI, 0); ctx.fill();
-      ctx.fillRect(cx-16, cy-63, 32, 6);
-    } else if(ch.id === 5) {
-      // Dragon horns
-      ctx.fillStyle = '#ff4400';
-      ctx.beginPath(); ctx.moveTo(cx-10, cy-73); ctx.lineTo(cx-15, cy-88); ctx.lineTo(cx-4, cy-73); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(cx+10, cy-73); ctx.lineTo(cx+15, cy-88); ctx.lineTo(cx+4, cy-73); ctx.fill();
+    ctx.fillStyle=ch.hair;
+    ctx.beginPath(); ctx.arc(x,y-60,14,Math.PI,0); ctx.fill();
+    if(ch.id===1){ctx.fillStyle='#c00';ctx.fillRect(x-15,y-67,30,7);}
+    if(ch.id===3){ctx.fillStyle='#c40';ctx.beginPath();ctx.arc(x,y-62,16,Math.PI,0);ctx.fill();}
+    if(ch.id===5){
+      ctx.fillStyle='#f40';
+      ctx.beginPath();ctx.moveTo(x-10,y-73);ctx.lineTo(x-15,y-87);ctx.lineTo(x-4,y-73);ctx.fill();
+      ctx.beginPath();ctx.moveTo(x+10,y-73);ctx.lineTo(x+15,y-87);ctx.lineTo(x+4,y-73);ctx.fill();
+      ctx.strokeStyle='#f40';ctx.lineWidth=5;
+      ctx.beginPath();ctx.moveTo(x-12,y-25);ctx.bezierCurveTo(x-30,y-15,x-38,y-5,x-33,y-18);ctx.stroke();
+    }
+    if(ch.id===0){
+      ctx.fillStyle=ch.hair;
+      ctx.beginPath();ctx.moveTo(x-8,y-72);ctx.lineTo(x-4,y-80);ctx.lineTo(x,y-73);ctx.lineTo(x+4,y-80);ctx.lineTo(x+8,y-72);ctx.fill();
     }
   }
-
-  // Eyes
-  ctx.fillStyle = 'white';
-  ctx.beginPath(); ctx.arc(cx-5, cy-61, 4, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(cx+5, cy-61, 4, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#222';
-  ctx.beginPath(); ctx.arc(cx-4, cy-61, 2, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(cx+6, cy-61, 2, 0, Math.PI*2); ctx.fill();
-
-  // Special: Dragon tail
-  if(ch.id === 5) {
-    ctx.strokeStyle = '#ff4400'; ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(cx-12, cy-25);
-    ctx.bezierCurveTo(cx-30, cy-15, cx-40, cy-5, cx-35+legSwing, cy-20);
-    ctx.stroke();
+  ctx.fillStyle='white';
+  ctx.beginPath();ctx.arc(x-5,y-61,4,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+5,y-61,4,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#111';
+  ctx.beginPath();ctx.arc(x-4,y-61,2,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+6,y-61,2,0,Math.PI*2);ctx.fill();
+  if(onGround){
+    ctx.strokeStyle='rgba(255,200,0,0.3)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.ellipse(x,y+2,20,6,0,0,Math.PI*2);ctx.stroke();
   }
 }
 
-function lightenColor(hex, amt) {
-  try {
-    let r=parseInt(hex.slice(1,3),16)+amt;
-    let g=parseInt(hex.slice(3,5),16)+amt;
-    let b=parseInt(hex.slice(5,7),16)+amt;
-    r=Math.min(255,r); g=Math.min(255,g); b=Math.min(255,b);
-    return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
-  } catch(e) { return hex; }
-}
-
-function drawObstacle(o) {
-  if(o.type === 0) {
-    // Rock
-    ctx.fillStyle = '#888';
-    ctx.beginPath();
-    ctx.ellipse(o.x, o.y, o.w/2, o.h/2, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle = '#aaa';
-    ctx.beginPath();
-    ctx.ellipse(o.x-5, o.y-5, o.w/4, o.h/4, 0, 0, Math.PI*2);
-    ctx.fill();
-  } else if(o.type === 1) {
-    // Cactus
-    ctx.fillStyle = '#2d8a00';
-    ctx.fillRect(o.x-8, o.y-o.h, 16, o.h);
-    ctx.fillRect(o.x-22, o.y-o.h*0.65, 14, 10);
-    ctx.fillRect(o.x+8, o.y-o.h*0.5, 14, 10);
-    ctx.fillRect(o.x-22, o.y-o.h*0.65-15, 8, 15);
-    ctx.fillRect(o.x+16, o.y-o.h*0.5-12, 8, 12);
+function drawObs(o) {
+  if(o.t===0){
+    ctx.fillStyle='#777';
+    ctx.beginPath();ctx.ellipse(o.x,o.y,o.w/2,o.h/2,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#999';
+    ctx.beginPath();ctx.ellipse(o.x-4,o.y-4,o.w/4,o.h/4,0,0,Math.PI*2);ctx.fill();
+  } else if(o.t===1){
+    ctx.fillStyle='#2d8a00';
+    ctx.fillRect(o.x-8,o.y-o.h,16,o.h);
+    ctx.fillRect(o.x-22,o.y-o.h*0.65,14,10);
+    ctx.fillRect(o.x+8,o.y-o.h*0.5,14,10);
+    ctx.fillRect(o.x-22,o.y-o.h*0.65-14,8,14);
+    ctx.fillRect(o.x+16,o.y-o.h*0.5-11,8,11);
   } else {
-    // Log
-    ctx.fillStyle = '#8B4513';
-    ctx.fillRect(o.x-o.w/2, o.y-o.h, o.w, o.h);
-    ctx.fillStyle = '#a0522d';
-    ctx.fillRect(o.x-o.w/2, o.y-o.h, o.w, 8);
-    // Tree rings
-    ctx.strokeStyle = '#6B3410'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.ellipse(o.x, o.y-o.h+4, o.w/2-3, 4, 0, 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle='#8B4513';
+    ctx.fillRect(o.x-o.w/2,o.y-o.h,o.w,o.h);
+    ctx.fillStyle='#a0522d';
+    ctx.fillRect(o.x-o.w/2,o.y-o.h,o.w,7);
   }
 }
 
 function drawCoin(cn) {
   ctx.save();
-  ctx.fillStyle = '#ffcc00';
-  ctx.shadowColor = '#ffaa00';
-  ctx.shadowBlur = 8;
-  ctx.beginPath();
-  ctx.arc(cn.x, cn.y, 12, 0, Math.PI*2);
-  ctx.fill();
-  ctx.fillStyle = '#ffee44';
-  ctx.beginPath();
-  ctx.arc(cn.x-2, cn.y-2, 6, 0, Math.PI*2);
-  ctx.fill();
-  ctx.fillStyle = '#cc8800';
-  ctx.font = 'bold 11px Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText('$', cn.x+1, cn.y+4);
-  ctx.shadowBlur = 0;
-  ctx.restore();
+  ctx.fillStyle='#ffcc00';
+  ctx.shadowColor='#ffaa00'; ctx.shadowBlur=10;
+  ctx.beginPath();ctx.arc(cn.x,cn.y,11,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#ffee55';
+  ctx.beginPath();ctx.arc(cn.x-2,cn.y-2,5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#996600';
+  ctx.font='bold 10px Arial';ctx.textAlign='center';
+  ctx.fillText('$',cn.x+1,cn.y+4);
+  ctx.shadowBlur=0; ctx.restore();
 }
 
-function drawBG() {
-  // Sky gradient
-  const sky = ctx.createLinearGradient(0, 0, 0, GND);
-  sky.addColorStop(0, '#0a0a1a');
-  sky.addColorStop(1, '#1a2a4a');
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, W, GND);
-
-  // Moon
-  ctx.fillStyle = '#fffde7';
-  ctx.beginPath(); ctx.arc(W*0.85, H*0.08, 25, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#e8e4a0';
-  ctx.beginPath(); ctx.arc(W*0.85+8, H*0.08-5, 18, 0, Math.PI*2); ctx.fill();
-
-  // Stars
-  ctx.fillStyle = 'rgba(255,255,255,0.7)';
-  [50,120,200,300,350,420,500,600,650,700].forEach(sx => {
-    [20,50,90,130].forEach(sy => {
-      ctx.beginPath();
-      ctx.arc(sx, sy, 1, 0, Math.PI*2);
-      ctx.fill();
-    });
-  });
-
-  // Clouds
-  clouds.forEach(cl => {
-    cl.x -= cl.spd * 0.5;
-    if(cl.x + cl.w < 0) cl.x = W + cl.w;
-    ctx.fillStyle = 'rgba(255,255,255,0.08)';
-    ctx.beginPath(); ctx.ellipse(cl.x, cl.y, cl.w/2, 15, 0, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(cl.x-20, cl.y+5, cl.w/3, 12, 0, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(cl.x+25, cl.y+5, cl.w/3.5, 11, 0, 0, Math.PI*2); ctx.fill();
-  });
-
-  // Mountains bg
-  ctx.fillStyle = '#1a2a3a';
-  ctx.beginPath();
-  ctx.moveTo(0, GND);
-  [0,80,160,250,330,420,500,600,700,W].forEach((mx,i) => {
-    const mh = i%2===0 ? GND-60 : GND-100;
-    ctx.lineTo(mx, mh);
-  });
-  ctx.lineTo(W, GND); ctx.closePath(); ctx.fill();
-
-  // Ground
-  const grd = ctx.createLinearGradient(0, GND, 0, H);
-  grd.addColorStop(0, '#2d5a1b');
-  grd.addColorStop(0.1, '#3d7a25');
-  grd.addColorStop(1, '#1a3a0a');
-  ctx.fillStyle = grd;
-  ctx.fillRect(0, GND, W, H-GND);
-
-  // Ground line
-  ctx.strokeStyle = '#4a9a2a';
-  ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.moveTo(0, GND); ctx.lineTo(W, GND); ctx.stroke();
-
-  // Ground details (moving dots)
-  ctx.fillStyle = '#4a9a2a';
-  for(let i=0; i<8; i++) {
-    const gx = ((dist*2 + i*120) % (W+20)) - 10;
-    ctx.fillRect(gx, GND+5, 40+i*5, 3);
-  }
+function burst(x,y,col,n=8){
+  for(let i=0;i<n;i++) parts.push({x,y,dx:(Math.random()-.5)*8,dy:(Math.random()-.5)*8,r:Math.random()*5+2,life:1,col});
 }
 
-function spawnObstacle() {
-  const t = Math.floor(Math.random()*3);
-  const heights = [35, 55, 40];
-  const widths = [50, 40, 45];
-  obstacles.push({
-    x: W+30, y: GND,
-    w: widths[t], h: heights[t], type: t
-  });
-}
-
-function spawnCoin() {
-  const h = GND - 30 - Math.random()*80;
-  coins_arr.push({ x: W+20, y: h });
-}
-
-function burst(x, y, col) {
-  for(let i=0; i<8; i++) {
-    particles.push({
-      x, y,
-      dx: (Math.random()-.5)*8,
-      dy: (Math.random()-.5)*8,
-      r: Math.random()*5+2,
-      life: 1, col
-    });
-  }
-}
-
-function loop() {
+function loop(){
   if(!running) return;
-  frame++;
-  dist += speed;
-
-  // Background
+  frame++; dist+=spd;
   drawBG();
-
-  // Speed up
-  if(frame % 300 === 0) speed = Math.min(speed + 0.5, 15);
-
-  // Spawn
-  if(frame % Math.max(60, 120 - Math.floor(score/50)) === 0) spawnObstacle();
-  if(frame % 80 === 0) spawnCoin();
-
-  // Jump physics
-  if(!onGround) {
-    P.y += jumpV;
-    jumpV += 0.9;
-    if(P.y >= GND) {
-      P.y = GND; onGround = true; jumping = false; jumpV = 0;
-    }
+  if(frame%300===0) spd=Math.min(spd+0.4,14);
+  if(frame%Math.max(55,110-Math.floor(score/60))===0){
+    const t=Math.floor(Math.random()*3);
+    obs.push({x:W+30,y:GND,w:[50,40,45][t],h:[35,55,40][t],t});
   }
-
-  // Leg animation
-  if(onGround) legAnim += 0.25;
-  else legAnim = 0;
-
-  // Move obstacles
-  obstacles = obstacles.filter(o => o.x > -100);
-  obstacles.forEach(o => {
-    o.x -= speed;
-    drawObstacle(o);
-    // Collision
-    if(Math.abs(o.x - P.x) < o.w*0.45 && P.y - P.h*0.3 > o.y - o.h - 5) {
-      burst(P.x, P.y, '#e94560');
-      gameOver();
-      return;
+  if(frame%75===0){
+    coinArr.push({x:W+20,y:GND-30-Math.random()*80});
+  }
+  if(!onGround){
+    P.y+=jumpV; jumpV+=0.85;
+    if(P.y>=GND){P.y=GND;onGround=true;jumpV=0;}
+  }
+  if(onGround) legA+=0.25; else legA=0;
+  obs=obs.filter(o=>o.x>-100);
+  obs.forEach(o=>{
+    o.x-=spd; drawObs(o);
+    if(Math.abs(o.x-P.x)<o.w*0.42&&P.y>o.y-o.h+5){
+      burst(P.x,P.y,'#e94560',12); gameOver();
     }
   });
-
-  // Move coins
-  coins_arr = coins_arr.filter(cn => cn.x > -20);
-  coins_arr.forEach((cn, ci) => {
-    cn.x -= speed;
-    drawCoin(cn);
-    // Collect
-    if(Math.abs(cn.x - P.x) < 25 && Math.abs(cn.y - P.y) < 40) {
-      coins_arr.splice(ci, 1);
-      coins++;
-      score += 5;
-      burst(cn.x, cn.y, '#ffcc00');
-      save();
+  coinArr=coinArr.filter(cn=>cn.x>-20);
+  coinArr.forEach((cn,ci)=>{
+    cn.x-=spd; drawCoin(cn);
+    if(Math.abs(cn.x-P.x)<25&&Math.abs(cn.y-P.y)<38){
+      coinArr.splice(ci,1); coins++; score+=5;
+      burst(cn.x,cn.y,'#ffcc00',6); save(); updateUI();
     }
   });
-
-  // Draw player
-  drawHuman(P.x, P.y, P.ch, legAnim);
-
-  // Particles
-  particles = particles.filter(p => p.life > 0);
-  particles.forEach(p => {
-    p.x += p.dx; p.y += p.dy; p.life -= 0.05;
-    ctx.globalAlpha = p.life;
-    ctx.fillStyle = p.col;
-    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
-    ctx.globalAlpha = 1;
+  drawChar(P.x,P.y,P.ch,legA);
+  parts=parts.filter(p=>p.life>0);
+  parts.forEach(p=>{
+    p.x+=p.dx;p.y+=p.dy;p.life-=0.05;
+    ctx.globalAlpha=p.life;ctx.fillStyle=p.col;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=1;
   });
-
-  // Score
-  score += 0.05;
-  if(score > best) { best = Math.floor(score); save(); }
-
-  // UI
-  ctx.fillStyle = 'white';
-  ctx.font = 'bold 18px Arial';
-  ctx.textAlign = 'left';
-  ctx.fillText(`⭐ ${Math.floor(score)}`, 15, 35);
-  ctx.textAlign = 'right';
-  ctx.fillText(`🏆 ${best}`, W-15, 35);
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#ffcc00';
-  ctx.fillText(`🪙 ${coins}`, W/2, 35);
-  ctx.fillStyle = '#a8b2d8';
-  ctx.font = '13px Arial';
-  ctx.fillText(`Speed: ${speed.toFixed(1)}`, W/2, 52);
-
-  raf = requestAnimationFrame(loop);
+  score+=0.05;
+  if(score>best){best=Math.floor(score);save();}
+  updateUI();
+  raf=requestAnimationFrame(loop);
 }
 
-function gameOver() {
-  running = false;
-  const ov = document.getElementById('overlay');
-  ov.style.display = 'flex';
-  ov.querySelector('h1').textContent = '💀 Game Over!';
-  document.getElementById('deadScore').style.display = 'block';
-  document.getElementById('deadScore').textContent = Math.floor(score);
-  document.getElementById('coinDisplay').textContent = `🪙 ${coins}`;
-  document.getElementById('playBtn').textContent = '🔄 Main Lagi';
+function gameOver(){
+  running=false;
+  document.getElementById('jumpBtn').style.display='none';
+  const ov=document.getElementById('overlay');
+  ov.style.display='flex';
+  ov.querySelector('h1').textContent='💀 Game Over!';
+  document.getElementById('deadScore').style.display='block';
+  document.getElementById('deadScore').textContent=Math.floor(score);
+  document.getElementById('coinDisplay').textContent='🪙 '+coins;
+  document.getElementById('playBtn').textContent='🔄 Main Lagi';
+  updateUI();
 }
 
-// Shop
-function openShop() {
-  document.getElementById('shop').style.display = 'flex';
-  document.getElementById('shopCoins').textContent = `🪙 ${coins}`;
-  renderShop();
-}
-
-function closeShop() {
-  document.getElementById('shop').style.display = 'none';
-}
-
-function renderShop() {
-  const grid = document.getElementById('charGrid');
-  grid.innerHTML = '';
-  CHARS.forEach(ch => {
-    const isOwned = owned.includes(ch.id);
-    const isSelected = ch.id === selectedChar;
-    const card = document.createElement('div');
-    card.className = 'char-card' + (isOwned ? ' owned' : '') + (isSelected ? ' selected' : '');
-
-    // Mini preview canvas
-    const cv = document.createElement('canvas');
-    cv.width = 60; cv.height = 80;
-    cv.className = 'char-preview';
-    const cx2 = cv.getContext('2d');
-    cx2.fillStyle = '#0f1a2e';
-    cx2.fillRect(0, 0, 60, 80);
-    // Draw mini character
-    cx2.save();
-    cx2.scale(0.55, 0.55);
-    cx2.translate(55, 90);
-    drawHumanMini(cx2, 0, 0, ch);
-    cx2.restore();
-
+function renderShop(){
+  document.getElementById('shopCoins').textContent='🪙 '+coins;
+  const grid=document.getElementById('charGrid');
+  grid.innerHTML='';
+  CHARS.forEach(ch=>{
+    const isOwned=owned.includes(ch.id);
+    const isSel=ch.id===selChar;
+    const card=document.createElement('div');
+    card.className='char-card'+(isOwned?' owned':'')+(isSel?' selected':'');
+    const cv=document.createElement('canvas');
+    cv.width=60;cv.height=90;
+    cv.style.cssText='width:60px;height:90px;display:block;margin:0 auto 5px;background:#0a1020;border-radius:8px;';
+    const c2=cv.getContext('2d');
+    c2.save();c2.scale(0.5,0.5);c2.translate(60,140);
+    drawChar.call(null,0,0,ch,0);
+    c2.restore();
     card.appendChild(cv);
-
-    const name = document.createElement('div');
-    name.className = 'char-name';
-    name.textContent = ch.name;
-    card.appendChild(name);
-
-    const price = document.createElement('div');
-    price.className = 'char-price';
-    price.textContent = ch.price === 0 ? 'Gratis' : `🪙 ${ch.price}`;
-    card.appendChild(price);
-
-    const status = document.createElement('div');
-    status.className = 'char-status';
-    if(isSelected) { status.textContent = '✅ Dipilih'; status.style.color = '#e94560'; }
-    else if(isOwned) { status.textContent = '👆 Pilih'; status.style.color = '#00cc66'; }
-    else if(coins >= ch.price) { status.textContent = '💰 Beli'; status.style.color = '#ffcc00'; }
-    else { status.textContent = `Kurang ${ch.price - coins} 🪙`; status.style.color = '#888'; }
-    card.appendChild(status);
-
-    card.onclick = () => {
-      if(isSelected) return;
-      if(isOwned) {
-        selectedChar = ch.id;
-        save();
-        renderShop();
-      } else if(coins >= ch.price) {
-        coins -= ch.price;
-        owned.push(ch.id);
-        selectedChar = ch.id;
-        save();
-        document.getElementById('shopCoins').textContent = `🪙 ${coins}`;
-        renderShop();
-      }
+    const nm=document.createElement('div');nm.className='char-name';nm.textContent=ch.name;card.appendChild(nm);
+    const pr=document.createElement('div');pr.className='char-price';pr.textContent=ch.price===0?'Gratis':'🪙 '+ch.price;card.appendChild(pr);
+    const st=document.createElement('div');st.className='char-status';
+    if(isSel){st.textContent='✅ Dipilih';st.style.color='#e94560';}
+    else if(isOwned){st.textContent='👆 Pilih';st.style.color='#00cc66';}
+    else if(coins>=ch.price){st.textContent='💰 Beli';st.style.color='#ffcc00';}
+    else{st.textContent=`Kurang ${ch.price-coins}🪙`;st.style.color='#888';}
+    card.appendChild(st);
+    card.onclick=()=>{
+      if(isSel)return;
+      if(isOwned){selChar=ch.id;save();renderShop();}
+      else if(coins>=ch.price){coins-=ch.price;owned.push(ch.id);selChar=ch.id;save();renderShop();}
     };
     grid.appendChild(card);
   });
 }
 
-function drawHumanMini(c2, x, y, ch) {
-  const s = ch.skinColor, col = ch.color, h = ch.hairColor;
-  c2.strokeStyle = col; c2.lineWidth = 10; c2.lineCap = 'round';
-  c2.beginPath(); c2.moveTo(x-5, y-18); c2.lineTo(x-8, y); c2.stroke();
-  c2.beginPath(); c2.moveTo(x+5, y-18); c2.lineTo(x+8, y); c2.stroke();
-  c2.fillStyle = '#333';
-  c2.beginPath(); c2.ellipse(x-8, y, 9, 5, 0.2, 0, Math.PI*2); c2.fill();
-  c2.beginPath(); c2.ellipse(x+8, y, 9, 5, -0.2, 0, Math.PI*2); c2.fill();
-  c2.fillStyle = col;
-  c2.beginPath(); c2.roundRect(x-12, y-45, 24, 27, 5); c2.fill();
-  c2.strokeStyle = col; c2.lineWidth = 8;
-  c2.beginPath(); c2.moveTo(x-10, y-40); c2.lineTo(x-18, y-28); c2.stroke();
-  c2.beginPath(); c2.moveTo(x+10, y-40); c2.lineTo(x+18, y-28); c2.stroke();
-  c2.fillStyle = s;
-  c2.beginPath(); c2.arc(x-18, y-28, 6, 0, Math.PI*2); c2.fill();
-  c2.beginPath(); c2.arc(x+18, y-28, 6, 0, Math.PI*2); c2.fill();
-  c2.fillRect(x-5, y-52, 10, 10);
-  c2.beginPath(); c2.arc(x, y-60, 14, 0, Math.PI*2); c2.fill();
-  c2.fillStyle = h;
-  c2.beginPath(); c2.arc(x, y-60, 14, Math.PI, 0); c2.fill();
-  if(ch.id===1){ c2.fillStyle='#cc0000'; c2.fillRect(x
+// Button events - menggunakan onclick langsung
+document.getElementById('playBtn').onclick = startGame;
+document.getElementById('shopBtn').onclick = function() {
+  document.getElementById('shop').style.display='flex';
+  renderShop();
+};
+document.getElementById('closeShop').onclick = function() {
+  document.getElementById('shop').style.display='none';
+};
+document.getElementById('jumpBtn').ontouchstart = function(e) { e.preventDefault(); doJump(); };
+document.getElementById('jumpBtn').onclick = doJump;
+c.ontouchstart = function(e) {
+  if(running) { e.preventDefault(); doJump(); }
+};
+
+updateUI();
+</script>
+</body>
+</html>  
